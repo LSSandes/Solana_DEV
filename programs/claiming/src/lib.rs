@@ -51,9 +51,28 @@ pub mod claiming_system  {
         Ok(())
     }
 
-    
+    pub fn reclaim_unclaimed(ctx: Context<ReclaimUnclaimed>) -> Result<()> {
+        let claim_period = &ctx.accounts.claim_period;
+        require!(Clock::get()?.unix_timestamp as u64 > claim_period.end_date, ErrorCode::ClaimPeriodNotEnded);
 
+        let cpi_accounts_sol = Transfer {
+            from: ctx.accounts.sol_account.to_account_info(),
+            to: ctx.accounts.designated_wallet.to_account_info(),
+            authority: ctx.accounts.claim_authority.to_account_info(),
+        };
+
+        let cpi_accounts_spl = Transfer {
+            from: ctx.accounts.spl_account.to_account_info(),
+            to: ctx.accounts.designated_wallet.to_account_info(),
+            authority: ctx.accounts.claim_authority.to_account_info(),
+        };
+
+        let cpi_program = ctx.accounts.token_program.clone();
+
+        token::transfer(CpiContext::new(cpi_program.clone(), cpi_accounts_sol), ctx.accounts.sol_account.amount)?;
+        token::transfer(CpiContext::new(cpi_program, cpi_accounts_spl), ctx.accounts.spl_account.amount)?;
+        
+        Ok(())
+    }
 }
 
-#[derive(Accounts)]
-pub struct Initialize {}
