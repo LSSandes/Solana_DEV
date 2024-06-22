@@ -1,8 +1,12 @@
 use anchor_lang::prelude::*;
 
-use solana_program::program_pack::{Pack, Sealed};
-use anchor_spl::token::{self, TokenAccount, Transfer};
+use solana_program::{
+    program_pack::{Pack, Sealed},
+    system_instruction,
+};
+use anchor_spl::token::{self, TokenAccount, Transfer, Token};
 use std::convert::Into;
+use sha2::{Sha256, Digest};
 
 declare_id!("PROGRAM_ID");
 
