@@ -19,6 +19,14 @@ pub mod claiming_system  {
 
     pub fn claim(ctx: Context<Claim>, user_id: String, claim_id: String, sol_amount: u64, spl_amount: u64) -> Result<()> {
         let user_claim = &mut ctx.accounts.user_claim;
+        
+        // Check if current time is within claim period
+        let current_time = Clock::get()?.unix_timestamp as u64;
+        let claim_period = &ctx.accounts.claim_period;
+       
+        require!(current_time >= claim_period.start_date && current_time <= claim_period.end_date, ErrorCode:: ClaimPeriodNotActivate);
+
+
         //Check if claim has already been made
         require!(!user_claim.is_claimed, ErrorCode::AlreadyClaimed);
         
