@@ -9,7 +9,7 @@ use merkle_tree: MerkleTree;
 use std::convert::Into;
 use sha2::{Sha256, Digest};
 
-declare_id!("PROGRAM_ID");
+declare_id!("8QsmH7LAnBsawrECqdbuNP7sw6SNBUSDB1bvw4fSR9qY");
 
 #[program]
 pub mod claiming_system  {
