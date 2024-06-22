@@ -100,7 +100,7 @@ pub struct Claim<'info> {
     #[account(mut)]
     pub spl_account: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub user_wallet: AccountInfo<'info>,
+    pub user_wallet: AccountInfo<'info, TokenAccount>,
     #[account(signer)]
     pub claim_authority: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
@@ -114,7 +114,7 @@ pub struct ReclaimUnclaimed<'info> {
     #[account(mut)]
     pub spl_account: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub designated_wallet: AccountInfo<'info>,
+    pub designated_wallet: AccountInfo<'info, TokenAccount>,
     #[account(signer)]
     pub claim_authority: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
