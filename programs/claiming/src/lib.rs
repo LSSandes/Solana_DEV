@@ -32,16 +32,29 @@ pub mod claiming_system  {
         
         //Solana coin claiming
         if sol_amount > 0 {
-            let cpi_accounts = Transfer {
-                from: ctx.accounts.sol_account.to_account_info(),
-                to: ctx.accounts.user_wallet.to_account_info(),
-                authority: ctx.accounts.claim_authority.to_account_info()
-            };
-            let cpi_program = ctx.accounts.token_program.clone();
-            token::transfer(
-                CpiContext::new(cpi_program, cpi_accounts), 
-                sol_amount
+            // Used invoke function for transferring native SOL
+            invoke(
+                &solana_program::system_instruction::transfer(
+                    &ctx.accounts.claim_authority.key,
+                    &ctx.accounts.user_wallet.key,
+                    sol_amount
+                ),
+                &[
+                    ctx.accounts.claim_authority.to_account_info(),
+                    ctx.accounts.user_wallet.to_account_info(),
+                    ctx.accounts.system_program.to_account_info()
+                ]
             )?;
+            // let cpi_accounts = Transfer {
+            //     from: ctx.accounts.sol_account.to_account_info(),
+            //     to: ctx.accounts.user_wallet.to_account_info(),
+            //     authority: ctx.accounts.claim_authority.to_account_info()
+            // };
+            // let cpi_program = ctx.accounts.token_program.clone();
+            // token::transfer(
+            //     CpiContext::new(cpi_program, cpi_accounts), 
+            //     sol_amount
+            // )?;
         }
 
         //SPL token claiming
@@ -112,6 +125,8 @@ pub struct Claim<'info> {
     #[account(signer)]
     pub claim_authority: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+    pub claim_period: Account<'info, ClaimPeriod>
 }
 
 #[derive(Accounts)]
