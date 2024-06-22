@@ -5,6 +5,7 @@ use solana_program::{
     system_instruction,
 };
 use anchor_spl::token::{self, TokenAccount, Transfer, Token};
+use merkle_tree: MerkleTree;
 use std::convert::Into;
 use sha2::{Sha256, Digest};
 
@@ -14,26 +15,46 @@ declare_id!("PROGRAM_ID");
 pub mod claiming_system  {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, _bump: u8) -> Result<()> {
+    pub fn initialize(ctx: Context<Initialize>, _bump: u8, sol_merkle_root: [u8; 32], spl_merkle_root: [u8, 32]) -> Result<()> {
         let claim_period = &mut ctx.accounts.claim_period;
         claim_period.start_date = Clock::get()?.unix_timestamp as u64;
         claim_period.end_date = claim_period.start_date + 90 * 24 * 60 * 60; // 90 days
+
+        claim_period.sol_merkle_root = sol_merkle_root;
+        claim_period.spl_merkle_root = spl_merkle_root;
         Ok(())
     }
 
-    pub fn claim(ctx: Context<Claim>, user_id: String, claim_id: String, sol_amount: u64, spl_amount: u64) -> Result<()> {
+    pub fn claim(ctx: Context<Claim>, 
+                 user_id: String, 
+                 claim_id: String, 
+                 sol_amount: u64, 
+                 spl_amount: u64,
+                 sol_proof: Vec<[u8; 32]>,
+                 spl_proof: Vec<[u8; 32]>
+                ) -> Result<()> {
         let user_claim = &mut ctx.accounts.user_claim;
         
         // Check if current time is within claim period
         let current_time = Clock::get()?.unix_timestamp as u64;
         let claim_period = &ctx.accounts.claim_period;
-       
         require!(current_time >= claim_period.start_date && current_time <= claim_period.end_date, ErrorCode:: ClaimPeriodNotActive);
-
 
         //Check if claim has already been made
         require!(!user_claim.is_claimed, ErrorCode::AlreadyClaimed);
         
+        let sol_leaf = hash_claim_entry(&user_id, &claim_id, sol_amount);
+        let spl_leaf = hash_claim_entry(&user_id, &claim_id, spl_amount);
+
+        require!(
+            merkle_tree::verify_proof(&claim_period.sol_merkle_root, &sol_leaf, &sol_proof),
+            ErrorCode:: InvalidMerkleProof
+        );
+
+        require!(
+            merkle_tree::verify_proof(&claim_period.spl_merkle_root, &spl_leaf, &spl_proof),
+            ErrorCode: InvalidMerkleProof
+        )
         //Solana coin claiming
         if sol_amount > 0 {
             // Used invoke function for transferring native SOL
@@ -151,6 +172,9 @@ pub struct ReclaimUnclaimed<'info> {
 pub struct ClaimPeriod {
     pub start_date: u64,
     pub end_date: u64,
+
+    pub sol_merkle_root: [u8; 32];
+    pub spl_merkle_root: [u8; 32];
 }
 
 #[account]
@@ -168,4 +192,15 @@ pub enum ErrorCode {
     ClaimPeriodNotEnded,
     #[msg("The claim period is not active.")]
     ClaimPeriodNotActive,
+    #[msg("The provided Merkle proof is invalid.")]
+    InvalidMerkleProof,
+}
+
+fn hash_claim_entry(user_id: &String, claim_id: &String, amount: u64) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+
+    hasher.update(user_id.as_bytes());
+    hasher.update(claim_id.as_bytes());
+    hasher.update(amount.to_le_bytes());
+    hasher.finalize().into();
 }
