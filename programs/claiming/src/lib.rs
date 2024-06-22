@@ -5,7 +5,7 @@ use solana_program::{
     system_instruction,
 };
 use anchor_spl::token::{self, TokenAccount, Transfer, Token};
-use merkle_tree: MerkleTree;
+use merkle_tree:: MerkleTree;
 use std::convert::Into;
 use sha2::{Sha256, Digest};
 
@@ -15,7 +15,7 @@ declare_id!("8QsmH7LAnBsawrECqdbuNP7sw6SNBUSDB1bvw4fSR9qY");
 pub mod claiming_system  {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, _bump: u8, sol_merkle_root: [u8; 32], spl_merkle_root: [u8, 32]) -> Result<()> {
+    pub fn initialize(ctx: Context<Initialize>, _bump: u8, sol_merkle_root: [u8; 32], spl_merkle_root: [u8; 32]) -> Result<()> {
         let claim_period = &mut ctx.accounts.claim_period;
         claim_period.start_date = Clock::get()?.unix_timestamp as u64;
         claim_period.end_date = claim_period.start_date + 90 * 24 * 60 * 60; // 90 days
@@ -53,8 +53,8 @@ pub mod claiming_system  {
 
         require!(
             merkle_tree::verify_proof(&claim_period.spl_merkle_root, &spl_leaf, &spl_proof),
-            ErrorCode: InvalidMerkleProof
-        )
+            ErrorCode:: InvalidMerkleProof
+        );
         //Solana coin claiming
         if sol_amount > 0 {
             // Used invoke function for transferring native SOL
@@ -127,7 +127,7 @@ pub mod claiming_system  {
 }
 
 #[derive(Accounts)]
-pub struct Initialize<'info> {
+pub struct Initialize<'info, ClaimPeriod> {
     //8 bytes (for the account discriminator) + 16 bytes (8 bytes for start_date + 8 bytes for end_date)
     #[account(init, payer = user, space = 8 + 8*2)]
     pub claim_period: Account<'info, ClaimPeriod>,
@@ -173,8 +173,8 @@ pub struct ClaimPeriod {
     pub start_date: u64,
     pub end_date: u64,
 
-    pub sol_merkle_root: [u8; 32];
-    pub spl_merkle_root: [u8; 32];
+    pub sol_merkle_root: [u8; 32],
+    pub spl_merkle_root: [u8; 32],
 }
 
 #[account]
