@@ -24,7 +24,7 @@ pub mod claiming_system  {
         let current_time = Clock::get()?.unix_timestamp as u64;
         let claim_period = &ctx.accounts.claim_period;
        
-        require!(current_time >= claim_period.start_date && current_time <= claim_period.end_date, ErrorCode:: ClaimPeriodNotActivate);
+        require!(current_time >= claim_period.start_date && current_time <= claim_period.end_date, ErrorCode:: ClaimPeriodNotActive);
 
 
         //Check if claim has already been made
@@ -121,7 +121,7 @@ pub struct Claim<'info> {
     #[account(mut)]
     pub spl_account: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub user_wallet: AccountInfo<'info, TokenAccount>,
+    pub user_wallet: Account<'info, TokenAccount>,
     #[account(signer)]
     pub claim_authority: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
@@ -137,7 +137,7 @@ pub struct ReclaimUnclaimed<'info> {
     #[account(mut)]
     pub spl_account: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub designated_wallet: AccountInfo<'info, TokenAccount>,
+    pub designated_wallet: Account<'info, TokenAccount>,
     #[account(signer)]
     pub claim_authority: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
