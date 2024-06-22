@@ -147,4 +147,6 @@ pub enum ErrorCode {
     AlreadyClaimed,
     #[msg("The claiming period has not ended yet.")]
     ClaimPeriodNotEnded,
+    #[msg("The claim period is not active.")]
+    ClaimPeriodNotActive,
 }
